@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "devDependencies": {
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.5"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "exports": {
+    ".": "./shared-styles.css",
+    "./postcss": "./postcss.config.js"
+  },
+  "files": [
+    "*.css"
+  ],
+  "license": "MIT",
+  "name": "@acme/tailwind-config",
+  "packageManager": "pnpm@10.12.4",
+  "private": true,
+  "scripts": {
+    "clean": "rimraf dist .cache .turbo node_modules .next .velite",
+    "clean:git": "git clean -xdf .cache .turbo node_modules dist",
+    "format": "biome format --write ./",
+    "lint": "biome lint --write ./"
+  },
+  "type": "module",
+  "version": "0.1.0",
+  "author": "@acme"
+}

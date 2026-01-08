@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "files": [
+    "*.json"
+  ],
+  "name": "@acme/typescript-config",
+  "private": true,
+  "author": "@acme",
+  "version": "0.1.0"
+}

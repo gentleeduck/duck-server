@@ -1,0 +1,37 @@
+{
+  "author": "@acme",
+  "dependencies": {
+    "@vitejs/plugin-react-swc": "^3.10.2",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "vitest": "^4.0.16"
+  },
+  "description": "this is a package for `vitest` test configurations",
+  "devDependencies": {
+    "@acme/typescript-config": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "exports": {
+    ".": "./index.ts"
+  },
+  "keywords": [
+    "vitest",
+    "vitest-config"
+  ],
+  "license": "MIT",
+  "main": "index.ts",
+  "name": "@acme/vitest-config",
+  "packageManager": "pnpm@10.12.4",
+  "private": true,
+  "scripts": {
+    "clean": "rimraf dist .cache .turbo node_modules .next .velite",
+    "clean:git": "git clean -xdf .cache .turbo node_modules dist",
+    "format": "biome format --write ./",
+    "lint": "biome lint --write ./"
+  },
+  "type": "module",
+  "types": "index.ts",
+  "version": "0.0.1"
+}

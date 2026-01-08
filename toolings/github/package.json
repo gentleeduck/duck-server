@@ -1,0 +1,10 @@
+{
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "name": "@acme/github",
+  "packageManager": "pnpm@10.12.4",
+  "private": true,
+  "version": "0.1.0",
+  "author": "@acme"
+}

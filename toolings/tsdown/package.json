@@ -1,0 +1,31 @@
+{
+  "author": "@acme",
+  "dependencies": {
+    "@vitejs/plugin-react-swc": "^3.10.2",
+    "tsdown": "0.19.0-beta.4"
+  },
+  "description": "this is a package for `tsdown` build configs",
+  "devDependencies": {
+    "@acme/typescript-config": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "tsdown",
+    "tsdown-config"
+  ],
+  "license": "MIT",
+  "main": "index.ts",
+  "name": "@acme/tsdown-config",
+  "packageManager": "pnpm@10.12.4",
+  "private": true,
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo node_modules dist",
+    "format": "biome format --write ./",
+    "lint": "biome lint --write ./"
+  },
+  "type": "module",
+  "types": "index.ts",
+  "version": "0.0.1"
+}
