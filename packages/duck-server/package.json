@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "version": "0.0.10",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "peerDependenciesMeta": {},
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./*": "./src/**/index.ts"
+  },
+  "module": "./dist/index.js",
+  "name": "@gentledmeuck/server",
+  "packageManager": "pnpm@10.10.0",
+  "private": false,
+  "description": "Shared docs app kit used by the GentleDuck docs apps.",
+  "keywords": [
+    "gentleduck",
+    "duck-ui",
+    "docs",
+    "documentation",
+    "mdx",
+    "nextjs"
+  ],
+  "license": "MIT",
+  "author": "GentleDuck (https://www.gentleduck.org)",
+  "homepage": "https://github.com/gentleeduck/duck-ui/tree/master/packages/duck-docs#readme",
+  "bugs": {
+    "url": "https://github.com/gentleeduck/duck-ui/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gentleeduck/duck-ui.git",
+    "directory": "packages/duck-docs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "nodemon --watch . --exec tsx ./src/index.ts",
+    "check-types": "tsc -p tsconfig.json --noEmit --pretty false --skipLibCheck",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.8",
+    "@sinclair/typebox": "^0.34.47",
+    "arctype": "^0.0.0",
+    "arktype": "^2.1.29",
+    "hono": "^4.11.3",
+    "nodemon": "^3.1.11",
+    "valibot": "^1.2.0",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "tsdown": "0.19.0-beta.4",
+    "tsx": "^4.21.0",
+    "vitest": "^4.0.16"
+  }
+}
