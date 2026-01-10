@@ -25,12 +25,7 @@
   "name": "@acme/vitest-config",
   "packageManager": "pnpm@10.12.4",
   "private": true,
-  "scripts": {
-    "clean": "rimraf dist .cache .turbo node_modules .next .velite",
-    "clean:git": "git clean -xdf .cache .turbo node_modules dist",
-    "format": "biome format --write ./",
-    "lint": "biome lint --write ./"
-  },
+  "scripts": {},
   "type": "module",
   "types": "index.ts",
   "version": "0.0.1"

@@ -1,21 +1,31 @@
 {
-  "$schema": "https://turbo@acme.com/schema.json",
-  "ui": "tui",
+  "$schema": "https://turborepo.org/schema.json",
+  "ui": "stream",
   "tasks": {
     "build": {
+      "cache": true,
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
+      "outputs": [".next/**", "dist/**", ".cache/tsbuildinfo.json"]
     },
     "check-types": {
+      "cache": true,
       "dependsOn": ["^check-types"]
     },
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "test": {
+      "cache": true,
+      "dependsOn": ["^test"]
+    },
+    "format": {
+      "outputLogs": "new-only",
+      "outputs": [".cache/.prettiercache"]
+    },
+    "lint": {
+      "dependsOn": ["^topo", "^build"],
+      "outputs": [".cache/.eslintcache"]
     }
   }
 }

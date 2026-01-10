@@ -1,11 +1,22 @@
 {
-  "extends": "@acme/typescript-config/react-library.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "outDir": "dist",
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "incremental": false,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "dom", "dom.iterable"],
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "outDir": "./dist",
     "paths": {
-      "~/*": ["./src/*"]
-    }
+      "~/*": ["./*"]
+    },
+    "plugins": [],
+    "rootDir": "./"
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
+  "extends": "@acme/typescript-config/base.json",
+  "include": ["./**/*.ts", "./**/*.tsx"]
 }

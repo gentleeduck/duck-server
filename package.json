@@ -1,16 +1,60 @@
 {
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
-    "@changesets/cli": "^2.27.1",
+    "@changesets/cli": "^2.29.8",
     "husky": "^9.1.7",
     "turbo": "^2.7.3",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vercel": "^50.1.6"
   },
   "engines": {
     "node": ">=18"
   },
   "name": "@gentleduck",
+  "description": "GentleDuck monorepo for Duck UI, Duck Gen, and related tooling.",
+  "author": "GentleDuck (https://www.gentleduck.org)",
+  "license": "MIT",
+  "homepage": "https://www.gentleduck.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gentleeduck/duck-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gentleeduck/duck-ui/issues"
+  },
+  "keywords": [
+    "gentleduck",
+    "duck-ui",
+    "developer-tools",
+    "ui",
+    "react"
+  ],
   "packageManager": "pnpm@10.12.4",
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "rolldown"
+    ],
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "@ffprobe-installer/linux-x64",
+      "@parcel/watcher",
+      "@swc/core",
+      "core-js-pure",
+      "esbuild",
+      "protobufjs",
+      "sharp"
+    ],
+    "packageExtensions": {
+      "@hookform/resolvers@*": {
+        "dependencies": {
+          "zod": "^4.2.1"
+        }
+      }
+    },
+    "overrides": {
+      "vite": "npm:rolldown-vite@^7.3.0"
+    }
+  },
   "private": true,
   "scripts": {
     "dev": "turbo run dev",
@@ -23,7 +67,8 @@
     "fix": "biome check --write .",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo run build --filter=@acme/docs^... && changeset publish",
+    "ci": "pnpm run lint && pnpm run format && pnpm run build",
+    "release": "pnpm run ci && changeset publish",
     "clean": "rimraf dist .cache .turbo node_modules .next .velite",
     "clean:git": "git clean -xdf .cache .turbo node_modules dist",
     "lint:ws": "pnpm dlx sherif@latest",
