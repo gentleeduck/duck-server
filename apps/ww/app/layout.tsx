@@ -1,0 +1,75 @@
+import type { Metadata } from 'next'
+import './globals.css'
+import '@gentleduck/motion/css'
+import { Toaster } from '@acme/ui/sonner'
+import { DocsProvider, TailwindIndicator, ThemeProvider } from '@gentleduck/docs/client'
+import { cn } from '@gentleduck/libs/cn'
+import { KeyProvider } from '@gentleduck/vim/react'
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { docsConfig } from '~/config/docs'
+import { METADATA } from '~/config/metadata'
+import { META_THEME_COLORS, siteConfig } from '~/config/site'
+
+const docsEntries = [] as any
+
+const docsSiteConfig = {
+  ...siteConfig,
+  metaThemeColors: META_THEME_COLORS,
+}
+
+export const metadata: Metadata = {
+  ...METADATA,
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html dir="ltr" lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preload critical fonts */}
+        <link as="font" crossOrigin="anonymous" href="/fonts/Geist-VF.woff2" rel="preload" type="font/woff2" />
+        <link as="font" crossOrigin="anonymous" href="/fonts/GeistMono-VF.woff2" rel="preload" type="font/woff2" />
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  let fontType = localStorage.getItem('fontType'); 
+                  let family = fontType === 'sans'
+                    ? 'var(--font-sans-geist)'
+                    : 'var(--font-mono-geist)';
+
+                  // Preferred: set as inline style property with priority
+                  document.documentElement.style.setProperty('font-family', family, 'important');
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className={cn('duck min-h-svh bg-background antialiased')}>
+        <KeyProvider timeoutMs={100}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            disableTransitionOnChange
+            enableColorScheme
+            enableSystem>
+            <DocsProvider docs={docsEntries} docsConfig={docsConfig} siteConfig={docsSiteConfig}>
+              <div vaul-drawer-wrapper="">
+                <div className="relative flex min-h-svh flex-col bg-background">{children}</div>
+              </div>
+            </DocsProvider>
+
+            {/* non-critical scripts */}
+            <SpeedInsights />
+            <VercelAnalytics />
+            <Toaster />
+            {process.env.NODE_ENV === 'development' && <TailwindIndicator />}
+          </ThemeProvider>
+        </KeyProvider>
+      </body>
+    </html>
+  )
+}
