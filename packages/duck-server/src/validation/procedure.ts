@@ -83,8 +83,31 @@ export class Procedure<TCtx, TInput, TOutput> {
         }
 
         try {
-          const out = await resolver({ ctx: ctx, input: rawInput })
-          return (this.outputSchema ? await parseOutput(this.outputSchema, out) : out) as RPCResType<TOut>
+          const callResolver = async (nextCtx: TCtx): Promise<RPCResType<TOut>> => {
+            const out = await resolver({ ctx: nextCtx, input: rawInput })
+            return (this.outputSchema ? await parseOutput(this.outputSchema, out) : out) as RPCResType<TOut>
+          }
+
+          const runMiddlewares = async (index: number, nextCtx: TCtx): Promise<RPCResType<TOut>> => {
+            if (index >= this.middlewares.length) {
+              return callResolver(nextCtx)
+            }
+
+            const mw = this.middlewares[index]!
+            const result = await mw({
+              ctx: nextCtx,
+              next: async (opts) => {
+                const updatedCtx = (opts?.ctx ?? nextCtx) as TCtx
+                const data = await runMiddlewares(index + 1, updatedCtx)
+                return { ok: true, data }
+              },
+            })
+
+            if (result.ok) return result.data as RPCResType<TOut>
+            return R.toErr(result.error)[0]
+          }
+
+          return await runMiddlewares(0, ctx)
         } catch (e: unknown) {
           return R.toErr(e)[0]
         }
