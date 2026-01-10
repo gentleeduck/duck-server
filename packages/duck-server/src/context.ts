@@ -15,11 +15,11 @@ export type AuthedContext = BaseContext & {
 export function authMiddleware(): MiddlewareFn<BaseContext, AuthedContext> {
   return async ({ ctx, next }) => {
     // Example: read header
-    const token = ctx.req.headers.get('authorization') ?? ''
-    if (!token.startsWith('Bearer ')) {
-      return { ok: false, error: new RPCError({ code: 'RPC_UNAUTHORIZED', message: 'Missing auth' }) }
-      // return R.err('RPC_UNAUTHORIZED')
-    }
+    // const token = ctx.req.headers.get('authorization') ?? ''
+    // if (!token.startsWith('Bearer ')) {
+    //   return { ok: false, error: new RPCError({ code: 'RPC_UNAUTHORIZED', message: 'Missing auth' }) }
+    //   // return R.err('RPC_UNAUTHORIZED')
+    // }
 
     // You would verify token here
     const user = { id: 'u1', role: 'user' as const }

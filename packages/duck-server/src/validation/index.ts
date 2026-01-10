@@ -1,12 +1,11 @@
-import { getProcedureAtPath } from './procedure'
-import type { RPCRouterDef } from './router'
+import { type RPCRouter, RPCRouterIndex } from './router'
 import { RPC_CODES } from './rpc-codes'
 import { RPCRes as R, RPCError } from './rpc-res'
 
 export type CreateContextOpts = { req: Request }
 
 type FetchRequestHandlerOptions<TCtx> = {
-  router: RPCRouterDef<TCtx, any>
+  router: RPCRouter<any>
   createContext: (opts: CreateContextOpts) => Promise<TCtx> | TCtx
   endpoint?: string // default "/trpc"
   req: Request
@@ -46,7 +45,7 @@ export async function fetchRequestHandler<TCtx>({
       throw new RPCError({ code: 'RPC_BAD_REQUEST', message: 'Missing or invalid type' })
     }
 
-    const proc = getProcedureAtPath(router, path)
+    const proc = RPCRouterIndex.getProcedureAtPath(router, path)
     if (!proc) {
       throw new RPCError({ code: 'RPC_NOT_FOUND', message: 'Procedure type mismatch' })
     }

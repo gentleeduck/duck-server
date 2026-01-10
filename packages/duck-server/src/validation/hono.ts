@@ -1,10 +1,10 @@
 import type { MiddlewareHandler } from 'hono'
 import { routePath } from 'hono/route'
 import { type CreateContextOpts, fetchRequestHandler } from '.'
-import type { RPCRouterDef } from './router'
+import type { RPCRouter } from './router'
 
 type dRPCOptions<TCtx> = {
-  router: RPCRouterDef<TCtx, any>
+  router: RPCRouter<any>
   createContext: (opts: CreateContextOpts) => Promise<TCtx> | TCtx
   endpoint?: string
 }
@@ -46,6 +46,7 @@ export function drpcServer<TCtx>({ endpoint, createContext, ...rest }: dRPCOptio
             },
           }),
     }).then((res) =>
+      // this is hono related issue https://github.com/honojs/hono
       // @ts-expect-error c.body accepts both ReadableStream and null but is not typed well
       c.body(res.body, res),
     )

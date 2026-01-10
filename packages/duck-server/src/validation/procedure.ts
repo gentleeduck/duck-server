@@ -1,5 +1,4 @@
 import type { MiddlewareFn } from './middleware'
-import { type AnyRPCRouter, isRPCRouter, type RPCRouterDef } from './router'
 import { RPCRes as R, type RPCResType } from './rpc-res'
 import { type AnySchema, type InferOut, parseInput, parseOutput } from './rpc-schema'
 
@@ -114,33 +113,16 @@ export class Procedure<TCtx, TInput, TOutput> {
       },
     }
   }
-}
 
-export function isProcedure(x: any): x is AnyProc {
-  return x && x._kind === 'procedure'
-}
-
-export function getProcedureAtPath(router: AnyRPCRouter, path: string[]): AnyProc | null {
-  let cur: any = router
-  for (let i = 0; i < path.length; i++) {
-    const key = path[i]!
-    const next = cur._record?.[key]
-    if (!next) return null
-
-    if (i === path.length - 1) {
-      return isProcedure(next) ? next : null
-    }
-
-    if (!isRPCRouter(next)) return null
-    cur = next
+  public static isProcedure(x: unknown): x is AnyProc {
+    return !!x && typeof x === 'object' && (x as any)._kind === 'procedure'
   }
-  return null
 }
 
-export type ExtractProcedures<T> = {
-  [K in keyof T]: T[K] extends ProcedureDef<any, infer I, infer O>
-    ? (input: I) => Promise<O>
-    : T[K] extends RPCRouterDef<any, infer R2>
-      ? ExtractProcedures<R2>
-      : never
-}
+// export type ExtractProcedures<T> = {
+//   [K in keyof T]: T[K] extends ProcedureDef<any, infer I, infer O>
+//     ? (input: I) => Promise<O>
+//     : T[K] extends RPCRouterDef<any, infer R2>
+//       ? ExtractProcedures<R2>
+//       : never
+// }
