@@ -19,7 +19,6 @@ class UploadService {
 
 export const uploadRouter = t.router({
   deleteBucket: protectedProcedure.input(z.object({ bucketId: z.string() })).mutation(async ({ ctx, input }) => {
-    console.log(ctx)
     try {
       let data = await UploadService.deleteBucket(input)
 

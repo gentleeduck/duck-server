@@ -52,7 +52,6 @@ export class RPCRes {
 
   public static toErr(e: unknown): [RPCResType<never>, number] {
     const de = RPCError.from(e)
-    console.log(de)
     const status = RPC_CODES[de.code as never] ?? RPC_CODES.RPC_INTERNAL_SERVER_ERROR
     return [RPCRes.err(de.code, de.message, de.issues), status]
   }

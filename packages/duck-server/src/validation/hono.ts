@@ -13,7 +13,7 @@ export function drpcServer<TCtx>({ endpoint, createContext, ...rest }: dRPCOptio
   const bodyProps = new Set(['arrayBuffer', 'blob', 'formData', 'json', 'text'] as const)
   type BodyProp = typeof bodyProps extends Set<infer T> ? T : never
   return async (c) => {
-    const canWithBody = c.req.method === 'GET' || c.req.method === 'HEAD'
+    const cannotHaveBody = c.req.method === 'GET' || c.req.method === 'HEAD'
 
     // Auto-detect endpoint from route path if not explicitly provided
     let resolvedEndpoint = endpoint
@@ -34,14 +34,15 @@ export function drpcServer<TCtx>({ endpoint, createContext, ...rest }: dRPCOptio
           env: c.env,
         }) as TCtx,
       endpoint: resolvedEndpoint!,
-      req: canWithBody
+      req: cannotHaveBody
         ? c.req.raw
         : new Proxy(c.req.raw, {
             get(t, p, _r) {
               if (bodyProps.has(p as BodyProp)) {
                 return () => c.req[p as BodyProp]()
               }
-              return Reflect.get(t, p, t)
+              const value = Reflect.get(t, p, t)
+              return typeof value === 'function' ? value.bind(t) : value
             },
           }),
     }).then((res) =>
