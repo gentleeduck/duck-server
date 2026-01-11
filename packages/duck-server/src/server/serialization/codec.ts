@@ -4,14 +4,25 @@ export const CBOR_CONTENT_TYPE = 'application/cbor'
 
 export type ResponseFormat = 'json' | 'cbor'
 
-export async function decodeRequestBody(req: Request): Promise<{ body: unknown; format: ResponseFormat }> {
-  const contentType = req.headers.get('content-type')
+/** Minimal body reader interface for decoding request bodies. */
+export type BodyReader = {
+  /** Read and parse a JSON body. */
+  json: () => Promise<unknown>
+  /** Read raw body bytes for CBOR decoding. */
+  arrayBuffer: () => Promise<ArrayBuffer>
+}
+
+/** Decode JSON or CBOR request bodies using a content-type hint. */
+export async function decodeRequestBody(
+  contentType: string | null | undefined,
+  reader: BodyReader,
+): Promise<{ body: unknown; format: ResponseFormat }> {
   if (isCborContentType(contentType)) {
-    const buf = await req.arrayBuffer()
+    const buf = await reader.arrayBuffer()
     return { body: cborDecode(new Uint8Array(buf)), format: 'cbor' }
   }
 
-  const body = await req.json().catch(() => null)
+  const body = await reader.json().catch(() => null)
   return { body, format: 'json' }
 }
 
@@ -29,7 +40,7 @@ export function serializeResponse(
   format: ResponseFormat,
 ): Response {
   if (format === 'cbor') {
-    return new Response(cborEncode(body), {
+    return new Response(cborEncode(body) as Buffer<ArrayBuffer>, {
       status,
       headers: withContentType(headers, CBOR_CONTENT_TYPE),
     })

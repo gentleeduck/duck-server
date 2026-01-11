@@ -3,7 +3,7 @@ import { createRPCError } from '../core/error'
 import { rpcToErr } from '../core/response'
 import type { RPCRouter } from '../core/router'
 import { getProcedureAtPath } from '../core/router'
-import { decodeRequestBody, resolveResponseFormat, serializeResponse } from '../serialization/codec'
+import { type BodyReader, decodeRequestBody, resolveResponseFormat, serializeResponse } from '../serialization/codec'
 
 /** Context creation input for fetch-based handlers. */
 export type CreateContextOpts = { req: Request }
@@ -15,6 +15,10 @@ export type FetchRequestHandlerOptions<TCtx> = {
   endpoint?: string // default "/rpc"
   req: Request
   headers?: Record<string, string>
+  /** Optional body reader for frameworks that wrap Request. */
+  bodyReader?: BodyReader
+  /** Optional content-type override used with a body reader. */
+  contentType?: string | null
 }
 
 /** Default headers applied to RPC responses. */
@@ -30,6 +34,8 @@ export async function fetchRequestHandler<TCtx>({
   createContext,
   req,
   headers,
+  bodyReader,
+  contentType,
 }: FetchRequestHandlerOptions<TCtx>): Promise<Response> {
   const resHeaders = headers ?? DEFAULT_HEADERS
   const responseFormat = resolveResponseFormat(req)
@@ -47,7 +53,8 @@ export async function fetchRequestHandler<TCtx>({
     const ctx = await createContext({ req })
     const path = parsePath(url, endpoint)
 
-    const { type, rawInput } = req.method === 'POST' ? await parsePostEnvelope(req) : parseGetEnvelope(url)
+    const { type, rawInput } =
+      req.method === 'POST' ? await parsePostEnvelope(req, bodyReader, contentType) : parseGetEnvelope(url)
 
     if (type !== 'query' && type !== 'mutation') {
       throw createRPCError({ code: 'RPC_BAD_REQUEST', message: 'Missing or invalid type' })
@@ -102,10 +109,15 @@ function parseGetEnvelope(url: URL): { type: unknown; rawInput: unknown } {
 }
 
 /** Parse the request body into a request envelope for POST requests. */
-async function parsePostEnvelope(req: Request): Promise<{ type: unknown; rawInput: unknown }> {
+/** Parse the request body into a request envelope for POST requests. */
+async function parsePostEnvelope(
+  req: Request,
+  bodyReader?: BodyReader,
+  contentType?: string | null,
+): Promise<{ type: unknown; rawInput: unknown }> {
   let decoded: { body: unknown; format: 'json' | 'cbor' }
   try {
-    decoded = await decodeRequestBody(req)
+    decoded = await decodeRequestBody(contentType ?? req.headers.get('content-type'), bodyReader ?? req)
   } catch (error) {
     throw createRPCError({ code: 'RPC_BAD_REQUEST', message: 'Invalid CBOR body', cause: error })
   }

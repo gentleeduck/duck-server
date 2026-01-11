@@ -20,29 +20,12 @@ export interface RPCServerOptions<TCtx> {
   headers?: Record<string, string>
 }
 
-/** Body methods that should be proxied to the Hono request wrapper. */
-const BODY_PROPS = new Set(['arrayBuffer', 'blob', 'formData', 'json', 'text'] as const)
-
 /** Create a Hono middleware that handles Duck RPC requests. */
 export function rpcServer<TCtx>(opts: RPCServerOptions<TCtx>): MiddlewareHandler {
-  /** Body method names that should be proxied for non-GET requests. */
-  type BodyProp = typeof BODY_PROPS extends Set<infer T> ? T : never
-
   return async (c) => {
     const cannotHaveBody = c.req.method === 'GET' || c.req.method === 'HEAD'
     const endpoint = resolveEndpoint(c, opts)
-
-    const req: Request = cannotHaveBody
-      ? c.req.raw
-      : new Proxy(c.req.raw, {
-          get(t, p, _r) {
-            if (BODY_PROPS.has(p as BodyProp)) {
-              return () => c.req[p as BodyProp]()
-            }
-            const value = Reflect.get(t, p, t)
-            return typeof value === 'function' ? value.bind(t) : value
-          },
-        })
+    const req: Request = c.req.raw
 
     const createContext = async (ctxOpts: CreateContextOpts): Promise<TCtx> => {
       const base = (await opts.createContext(ctxOpts)) as TCtx
@@ -54,6 +37,16 @@ export function rpcServer<TCtx>(opts: RPCServerOptions<TCtx>): MiddlewareHandler
       createContext,
       endpoint,
       req,
+      // Use Hono's body helpers instead of proxying Request methods.
+      ...(cannotHaveBody
+        ? {}
+        : {
+            bodyReader: {
+              json: () => c.req.json(),
+              arrayBuffer: () => c.req.arrayBuffer(),
+            },
+            contentType: c.req.header('content-type'),
+          }),
       ...(opts.headers ? { headers: opts.headers } : {}),
     })
 
