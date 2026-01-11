@@ -1,7 +1,7 @@
 # TODO
 
 ## Performance
-- Precompute a route map for `path -> proc` to avoid walking the router tree per request.
+- [x] Precompute a route map for `path -> proc` to avoid walking the router tree per request.
 - Skip `req.json()` for GET requests and allow querystring input to avoid body parse overhead.
 - Reuse a single JSON serializer (or avoid the trailing `\n`) to reduce allocations on large payloads.
 - Avoid per-request `Proxy` where possible; pass a stable `Request` and read body via `c.req` methods only.

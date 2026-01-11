@@ -1,6 +1,6 @@
 /** WARN: DO NOT TOUCH THIS FILE AT ALL */
 
-import { RPCError } from './rpc-res'
+import { RPCError } from './error'
 
 /**
  * The standard schema interface.

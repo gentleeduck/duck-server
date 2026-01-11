@@ -2,25 +2,28 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { authMiddleware, type BaseContext } from './context'
-import { drpcServer } from './validation/hono'
-import { initDuckRPC } from './validation/initDRPC'
-import { RPCRes as R } from './validation/rpc-res'
+import { initDuckRPC, RPCRes as R } from './server/core'
+import { rpcServer } from './server/http'
 
-const t = initDuckRPC<BaseContext>().create()
+const r = initDuckRPC<BaseContext>().create()
 
-export const publicProcedure = t.procedure()
+export const publicProcedure = r.procedure()
 export const protectedProcedure = publicProcedure.use(authMiddleware())
 
-class UploadService {
-  static async deleteBucket(input: { bucketId: string }) {
-    return { deleted: input.bucketId }
-  }
+/** Example delete action used by the upload router. */
+async function deleteBucket(input: { bucketId: string; bucket: string }) {
+  return { deleted: input.bucketId, bucket: input.bucket }
 }
 
-export const uploadRouter = t.router({
-  deleteBucket: protectedProcedure.input(z.object({ bucketId: z.string() })).mutation(async ({ ctx, input }) => {
+const deleteBucketInput = z.object({
+  bucketId: z.string().min(1),
+  bucket: z.string().min(1),
+})
+
+export const uploadRouter = r.router({
+  deleteBucket: protectedProcedure.input(deleteBucketInput).mutation(async ({ input }) => {
     try {
-      let data = await UploadService.deleteBucket(input)
+      let data = await deleteBucket(input)
 
       return R.ok(data, 'RPC_OK')
     } catch (error) {
@@ -29,24 +32,24 @@ export const uploadRouter = t.router({
   }),
 })
 
-// optional nesting like tRPC
-export const appRouter = t.router({
+// optional nesting with nested routers
+export const appRouter = r.router({
   upload: uploadRouter,
 })
+/** App-level router type for server and client inference. */
 export type AppRouter = typeof appRouter
 
 const app = new Hono()
 
 app.use(
-  '/trpc/*',
-  drpcServer({
+  '/rpc/*',
+  rpcServer({
     router: appRouter,
-    endpoint: '/trpc',
+    endpoint: '/rpc',
     createContext: ({ req }) => ({
       req,
       requestId: crypto.randomUUID(),
     }),
-    // onError: ({ error, path }) => { ... },
   }),
 )
 

@@ -1,3 +1,4 @@
+/** Mapping of RPC codes to HTTP status values. */
 export const RPC_CODES = {
   RPC_OK: 200,
   RPC_CREATED: 201,
@@ -28,5 +29,7 @@ export const RPC_CODES = {
   RPC_SERIALIZATION_ERROR: 465,
 } as const
 
+/** Template shape for custom RPC code strings. */
 type RPCCodeShape = `RPC_${Uppercase<string>}` & {}
+/** Union of built-in RPC codes and custom code strings. */
 export type RPCCode = keyof typeof RPC_CODES | RPCCodeShape

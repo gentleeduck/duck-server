@@ -14,17 +14,16 @@
     "./*": "./src/**/index.ts"
   },
   "module": "./dist/index.js",
-  "name": "@gentledmeuck/server",
+  "name": "@gentleduck/rpc",
   "packageManager": "pnpm@10.10.0",
   "private": false,
-  "description": "Shared docs app kit used by the GentleDuck docs apps.",
+  "description": "GentleDuck RPC server utilities.",
   "keywords": [
     "gentleduck",
-    "duck-ui",
-    "docs",
-    "documentation",
-    "mdx",
-    "nextjs"
+    "rpc",
+    "hono",
+    "validation",
+    "server"
   ],
   "license": "MIT",
   "author": "GentleDuck (https://www.gentleduck.org)",
