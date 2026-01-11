@@ -41,7 +41,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "dev": "nodemon --watch . --exec tsx ./src/index.ts",
+    "dev": "nodemon --watch . --exec tsx ./examples/basic-usage/server.ts",
     "check-types": "tsc -p tsconfig.json --noEmit --pretty false --skipLibCheck",
     "test": "vitest run"
   },
