@@ -12,24 +12,27 @@ export const protectedProcedure = publicProcedure.use(authMiddleware())
 
 /** Example delete action used by the upload router. */
 async function deleteBucket(input: { bucketId: string; bucket: string }) {
-  return { deleted: input.bucketId, bucket: input.bucket }
+  throw new Error('Not implemented')
+  // return { deleted: input.bucketId, bucket: input.bucket }
 }
 
-const deleteBucketInput = z.object({
-  bucketId: z.string().min(1),
-  bucket: z.string().min(1),
-})
-
 export const uploadRouter = r.router({
-  deleteBucket: protectedProcedure.input(deleteBucketInput).mutation(async ({ input }) => {
-    try {
-      let data = await deleteBucket(input)
-
-      return R.ok(data, 'RPC_OK')
-    } catch (error) {
-      return R.err('RPC_NOT_FOUND')
-    }
-  }),
+  deleteBucket: protectedProcedure
+    .input(
+      z.object({
+        bucketId: z.string().min(1),
+        bucket: z.string().min(1),
+      }),
+    )
+    .output(z.object({ deleted: z.string(), bucket: z.string() }))
+    .mutation(async ({ input }) => {
+      try {
+        let data = await deleteBucket(input)
+        return R.ok(data as any, 'RPC_OK')
+      } catch (error) {
+        return R.err('RPC_NOT_FOUND')
+      }
+    }),
 })
 
 // optional nesting with nested routers

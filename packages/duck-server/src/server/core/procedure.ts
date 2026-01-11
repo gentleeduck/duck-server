@@ -11,7 +11,7 @@ export type ProcedureDef<TCtx, TInput, TOutput> = {
   _type: ProcedureType
   _input: TInput
   _output: TOutput
-  _call: (opts: { ctx: TCtx; rawInput: TInput }) => Promise<RPCResType<TOutput>>
+  _call: (opts: { ctx: TCtx; rawInput: TInput }) => Promise<TOutput>
 }
 
 /** Any procedure. */
@@ -32,9 +32,9 @@ export type Procedure<TCtx, TInput, TOutput> = {
   /** Add an output schema that validates resolver output. */
   output<TSchema extends AnySchema>(schema: TSchema): Procedure<TCtx, TInput, InferOut<TSchema>>
   /** Create a query procedure definition. */
-  query<TOut>(resolver: Resolver<TCtx, TInput, TOut>): ProcedureDef<TCtx, TInput, TOut>
+  query<TOut extends TOutput>(resolver: Resolver<TCtx, TInput, TOut>): ProcedureDef<TCtx, TInput, TOut>
   /** Create a mutation procedure definition. */
-  mutation<TOut>(resolver: Resolver<TCtx, TInput, TOut>): ProcedureDef<TCtx, TInput, TOut>
+  mutation<TOut extends TOutput>(resolver: Resolver<TCtx, TInput, TOut>): ProcedureDef<TCtx, TInput, TOut>
 }
 
 /** Internal builder state for middleware and schema configuration. */
@@ -69,7 +69,7 @@ export function createProcedure<TCtx, TInput = unknown, TOutput = unknown>(
       outputSchema: schema,
     })
 
-  const make = <TOut>(
+  const make = <TOut extends TOutput>(
     type: ProcedureType,
     resolver: Resolver<TCtx, TInput, TOut>,
   ): ProcedureDef<TCtx, TInput, TOut> => ({
@@ -85,7 +85,9 @@ export function createProcedure<TCtx, TInput = unknown, TOutput = unknown>(
       try {
         const callResolver = async (nextCtx: TCtx): Promise<RPCResType<TOut>> => {
           const out = await resolver({ ctx: nextCtx, input: rawInput })
-          return (state.outputSchema ? await parseOutput(state.outputSchema, out) : out) as RPCResType<TOut>
+          if (!state.outputSchema || !out.ok) return out
+          const data = await parseOutput(state.outputSchema, out.data)
+          return { ...out, data }
         }
 
         const runMiddlewares = async (index: number, nextCtx: TCtx): Promise<RPCResType<TOut>> => {
@@ -114,12 +116,15 @@ export function createProcedure<TCtx, TInput = unknown, TOutput = unknown>(
     },
   })
 
+  const query = <TOut extends TOutput>(resolver: Resolver<TCtx, TInput, TOut>) => make('query', resolver)
+  const mutation = <TOut extends TOutput>(resolver: Resolver<TCtx, TInput, TOut>) => make('mutation', resolver)
+
   return {
     use,
     input,
     output,
-    query: (resolver) => make('query', resolver),
-    mutation: (resolver) => make('mutation', resolver),
+    query,
+    mutation,
   }
 }
 
