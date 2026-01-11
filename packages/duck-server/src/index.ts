@@ -12,8 +12,8 @@ export const protectedProcedure = publicProcedure.use(authMiddleware())
 
 /** Example delete action used by the upload router. */
 async function deleteBucket(input: { bucketId: string; bucket: string }) {
-  throw new Error('Not implemented')
-  // return { deleted: input.bucketId, bucket: input.bucket }
+  // throw new Error('Not implemented')
+  return { deleted: input.bucketId, bucket: input.bucket }
 }
 
 export const uploadRouter = r.router({
@@ -30,7 +30,7 @@ export const uploadRouter = r.router({
         let data = await deleteBucket(input)
         return R.ok(data as any, 'RPC_OK')
       } catch (error) {
-        return R.err('RPC_NOT_FOUND')
+        return R.err('RPC_DELETE_BUCKET_FAILED')
       }
     }),
 })

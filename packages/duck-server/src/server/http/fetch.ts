@@ -3,6 +3,7 @@ import { createRPCError } from '../core/error'
 import { rpcToErr } from '../core/response'
 import type { RPCRouter } from '../core/router'
 import { getProcedureAtPath } from '../core/router'
+import { decodeRequestBody, resolveResponseFormat, serializeResponse } from '../serialization/codec'
 
 /** Context creation input for fetch-based handlers. */
 export type CreateContextOpts = { req: Request }
@@ -22,7 +23,7 @@ export const DEFAULT_HEADERS: Record<string, string> = {
   'x-powered-by': 'duck-server',
 }
 
-/** Handle an RPC request and return a serialized JSON response. */
+/** Handle an RPC request and return a serialized response. */
 export async function fetchRequestHandler<TCtx>({
   endpoint = '/rpc',
   router,
@@ -31,6 +32,7 @@ export async function fetchRequestHandler<TCtx>({
   headers,
 }: FetchRequestHandlerOptions<TCtx>): Promise<Response> {
   const resHeaders = headers ?? DEFAULT_HEADERS
+  const responseFormat = resolveResponseFormat(req)
 
   try {
     const url = new URL(req.url)
@@ -61,19 +63,11 @@ export async function fetchRequestHandler<TCtx>({
     }
 
     const data = await proc._call({ ctx, rawInput })
-    return jsonResponse(data, RPC_CODES[data.code as never], resHeaders)
+    return serializeResponse(data, RPC_CODES[data.code as never], resHeaders, responseFormat)
   } catch (e: unknown) {
     const [err, status] = rpcToErr(e)
-    return jsonResponse(err, status, resHeaders)
+    return serializeResponse(err, status, resHeaders, responseFormat)
   }
-}
-
-/** Build a JSON response with a trailing newline. */
-function jsonResponse(body: unknown, status = 200, headers = DEFAULT_HEADERS): Response {
-  return new Response(JSON.stringify(body) + '\n', {
-    status,
-    headers,
-  })
 }
 
 /** Parse the RPC procedure path from the URL and endpoint. */
@@ -107,14 +101,23 @@ function parseGetEnvelope(url: URL): { type: unknown; rawInput: unknown } {
   return { type, rawInput: input }
 }
 
-/** Parse the JSON body into a request envelope for POST requests. */
+/** Parse the request body into a request envelope for POST requests. */
 async function parsePostEnvelope(req: Request): Promise<{ type: unknown; rawInput: unknown }> {
-  const body = await req.json().catch(() => null)
-  if (!isRecord(body)) {
-    throw createRPCError({ code: 'RPC_BAD_REQUEST', message: 'Invalid JSON body' })
+  let decoded: { body: unknown; format: 'json' | 'cbor' }
+  try {
+    decoded = await decodeRequestBody(req)
+  } catch (error) {
+    throw createRPCError({ code: 'RPC_BAD_REQUEST', message: 'Invalid CBOR body', cause: error })
   }
 
-  return { type: body.type, rawInput: body.input }
+  if (!isRecord(decoded.body)) {
+    throw createRPCError({
+      code: 'RPC_BAD_REQUEST',
+      message: decoded.format === 'cbor' ? 'Invalid CBOR body' : 'Invalid JSON body',
+    })
+  }
+
+  return { type: decoded.body.type, rawInput: decoded.body.input }
 }
 
 /** Narrow unknown values to plain object records. */
