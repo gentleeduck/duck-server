@@ -28,9 +28,9 @@ export const uploadRouter = r.router({
     .mutation(async ({ input }) => {
       try {
         let data = await deleteBucket(input)
-        return R.ok(data as any, 'RPC_OK')
+        return R.ok(data, 'RPC_DELETE_BUCKET_OK')
       } catch (error) {
-        return R.err('RPC_DELETE_BUCKET_FAILED')
+        return R.err('RPC_DELETE_BUCKET_ERR')
       }
     }),
 })
@@ -48,7 +48,6 @@ app.use(
   '/rpc/*',
   rpcServer({
     router: appRouter,
-    endpoint: '/rpc',
     createContext: ({ req }) => ({
       req,
       requestId: crypto.randomUUID(),
@@ -58,7 +57,4 @@ app.use(
 
 // Optional: Add other Hono routes
 app.get('/', (c) => c.text('Hono server running'))
-
 serve(app, () => console.log('Listening on port 3000'))
-
-export default app

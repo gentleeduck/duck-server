@@ -22,7 +22,7 @@
     "skipLibCheck": true /* FIXME remove this once vite fixes it */,
     "strict": true,
     "target": "esnext",
-    "types": [],
+    "types": ["@types/node"],
     "verbatimModuleSyntax": true
   },
   "exclude": ["node_modules", "dist"],

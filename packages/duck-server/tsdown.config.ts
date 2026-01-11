@@ -4,9 +4,8 @@ import { defineConfig } from 'tsdown'
 export default defineConfig({
   ...config,
   alias: {
-    '@duck-docs': './src',
+    '~/rpc': './src',
   },
   entry: ['src/**/*.{ts,tsx}', '!src/**/__test__/**'],
-  // noExternal: [/^@gentleduck\//],
   plugins: [],
 })
