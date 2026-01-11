@@ -9,9 +9,9 @@ import { type CallOptions, type ClientOptions, createRPCClient } from './low-lev
  */
 
 /** Infer procedure input type from a ProcedureDef. */
-type ProcInput<TProc> = TProc extends ProcedureDef<any, infer TInput, any> ? TInput : never
+type ProcInput<TProc> = TProc extends ProcedureDef<any, infer TInput, any, any> ? TInput : never
 /** Infer procedure output type from a ProcedureDef. */
-type ProcOutput<TProc> = TProc extends ProcedureDef<any, any, infer TOutput> ? TOutput : never
+type ProcOutput<TProc> = TProc extends ProcedureDef<any, any, infer TOutput, any> ? TOutput : never
 
 /** Map a procedure to its query/mutation call shape. */
 type ProcClient<TProc extends AnyProc> = TProc['_type'] extends 'query'
