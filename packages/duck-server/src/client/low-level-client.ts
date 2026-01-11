@@ -54,19 +54,24 @@ export function createRPCClient(opts: ClientOptions) {
     options: CallOptions = {},
   ): Promise<RPCResType<TData>> => {
     const url = joinUrl(opts.baseUrl, endpoint, path)
-    const payload = { type, input }
-    const headers = {
-      ...baseHeaders,
-      ...options.headers,
-      ...(format === 'cbor'
-        ? { 'content-type': 'application/cbor', accept: 'application/cbor' }
-        : { 'content-type': 'application/json', accept: 'application/json' }),
+    const base = { ...baseHeaders, ...options.headers }
+
+    if (type === 'query') {
+      const queryUrl = buildQueryUrl(url, type, input)
+      const res = await fetcher(queryUrl, {
+        method: 'GET',
+        headers: withAccept(base, format),
+        signal: options.signal ?? null,
+      })
+      return (await decodeResponse(res)) as RPCResType<TData>
     }
+
+    const payload = { type, input }
     const body = format === 'cbor' ? (cborEncode(payload) as Uint8Array) : JSON.stringify(payload)
 
     const res = await fetcher(url, {
       method: 'POST',
-      headers,
+      headers: withPostHeaders(base, format),
       body: body as BodyInit,
       signal: options.signal ?? null,
     })
@@ -106,4 +111,26 @@ function joinUrl(baseUrl: string, endpoint: string, path: string): string {
   const ep = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
   const p = path.replace(/^\/+/, '')
   return `${base}${ep}/${p}`
+}
+
+function buildQueryUrl(url: string, type: ProcedureType, input?: unknown): string {
+  const next = new URL(url)
+  next.searchParams.set('type', type)
+  if (input !== undefined) {
+    next.searchParams.set('input', JSON.stringify(input))
+  }
+  return next.toString()
+}
+
+function withAccept(headers: Record<string, string>, format: ClientFormat): Record<string, string> {
+  return { ...headers, accept: format === 'cbor' ? 'application/cbor' : 'application/json' }
+}
+
+function withPostHeaders(headers: Record<string, string>, format: ClientFormat): Record<string, string> {
+  return {
+    ...headers,
+    ...(format === 'cbor'
+      ? { 'content-type': 'application/cbor', accept: 'application/cbor' }
+      : { 'content-type': 'application/json', accept: 'application/json' }),
+  }
 }
