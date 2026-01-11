@@ -34,9 +34,9 @@ export function createRPCError(opts: RPCErrorOptions): RPCError {
 /**
  * Back-compat constructor for schema code that does `new RPCError(...)`.
  */
-export const RPCError: RPCErrorConstructor = (function RPCErrorCtor(opts: RPCErrorOptions) {
+export const RPCError: RPCErrorConstructor = function RPCErrorCtor(opts: RPCErrorOptions) {
   return createRPCError(opts)
-} as unknown) as RPCErrorConstructor
+} as unknown as RPCErrorConstructor
 
 /** Runtime type guard for RPCError values. */
 export function isRPCError(e: unknown): e is RPCError {
