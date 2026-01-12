@@ -40,7 +40,7 @@ export async function fetchRequestHandler<TCtx>({
 }: FetchRequestHandlerOptions<TCtx>): Promise<Response> {
   // Get or create request metadata (stored in WeakMap to avoid memory leaks)
   const metadata = getRequestMetadata(req)
-  
+
   const resHeaders = headers ?? DEFAULT_HEADERS
   const responseFormat = resolveResponseFormat(req)
 

@@ -4,7 +4,7 @@ import type { AppRouter } from './server'
 async function main() {
   const client = createRPCProxyClient<AppRouter>({ baseUrl: 'http://localhost:3000' })
 
-  const res = await client.greeting.query({ : 'wildduck' })
+  const res = await client.greeting.query({ name: 'wildduck' })
 
   console.log(res)
 }

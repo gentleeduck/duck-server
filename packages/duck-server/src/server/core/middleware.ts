@@ -1,6 +1,6 @@
 import type { RPCError } from './error'
 import { createRPCError, isRPCError } from './error'
-import { rpcErr, rpcToErr, type RPCResType } from './response'
+import { type RPCResType, rpcErr, rpcToErr } from './response'
 
 /** Result envelope returned from a middleware step. */
 export type MiddlewareResult<DData> = { ok: true; data: DData } | { ok: false; error: RPCError }
@@ -51,9 +51,7 @@ export function composeMiddlewares<TCtx, TOut>(
       }
       // Handle plain error objects with code property
       const errorObj = result.error as any
-      const code = (errorObj?.code && typeof errorObj.code === 'string') 
-        ? errorObj.code 
-        : 'RPC_INTERNAL_SERVER_ERROR'
+      const code = errorObj?.code && typeof errorObj.code === 'string' ? errorObj.code : 'RPC_INTERNAL_SERVER_ERROR'
       const message = errorObj?.message || 'Middleware error'
       const issues = errorObj?.issues || []
       return rpcErr(code, message, issues)
