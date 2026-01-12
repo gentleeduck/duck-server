@@ -4,6 +4,7 @@ import { rpcToErr } from '../core/response'
 import type { RPCRouter } from '../core/router'
 import { getProcedureAtPath } from '../core/router'
 import { type BodyReader, decodeRequestBody, resolveResponseFormat, serializeResponse } from '../serialization/codec'
+import { getRequestMetadata } from './request-metadata'
 
 /** Context creation input for fetch-based handlers. */
 export type CreateContextOpts = { req: Request }
@@ -22,10 +23,10 @@ export type FetchRequestHandlerOptions<TCtx> = {
 }
 
 /** Default headers applied to RPC responses. */
-export const DEFAULT_HEADERS: Record<string, string> = {
+export const DEFAULT_HEADERS = Object.freeze({
   'content-type': 'application/json',
   'x-powered-by': 'duck-server',
-}
+} as const)
 
 /** Handle an RPC request and return a serialized response. */
 export async function fetchRequestHandler<TCtx>({
@@ -37,6 +38,9 @@ export async function fetchRequestHandler<TCtx>({
   bodyReader,
   contentType,
 }: FetchRequestHandlerOptions<TCtx>): Promise<Response> {
+  // Get or create request metadata (stored in WeakMap to avoid memory leaks)
+  const metadata = getRequestMetadata(req)
+  
   const resHeaders = headers ?? DEFAULT_HEADERS
   const responseFormat = resolveResponseFormat(req)
 
@@ -51,7 +55,7 @@ export async function fetchRequestHandler<TCtx>({
     }
 
     const ctx = await createContext({ req })
-    const path = parsePath(url, endpoint)
+    const path = parsePath(url, endpoint.length)
 
     const { type, rawInput } =
       req.method === 'POST' ? await parsePostEnvelope(req, bodyReader, contentType) : parseGetEnvelope(url)
@@ -78,8 +82,11 @@ export async function fetchRequestHandler<TCtx>({
 }
 
 /** Parse the RPC procedure path from the URL and endpoint. */
-function parsePath(url: URL, endpoint: string): string[] {
-  const pathStr = url.pathname.slice(endpoint.length).replace(/^\//, '')
+export function parsePath(url: URL, endpointLen: number): string[] {
+  const pathname = url.pathname
+  let start = endpointLen
+  if (pathname.charCodeAt(start) === 47) start += 1 // '/'
+  const pathStr = pathname.slice(start)
   return pathStr ? pathStr.split('.') : []
 }
 

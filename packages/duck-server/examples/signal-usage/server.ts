@@ -1,14 +1,14 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { initDuckRPC, RPCRes as R } from '../../src/server/core'
+import { initRPC, RPCRes as R } from '../../src/server/core'
 import { rpcServer } from '../../src/server/http'
 
 type BaseContext = { req: Request; requestId: string }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const t = initDuckRPC<BaseContext>().create()
+const t = initRPC<BaseContext>().create()
 const publicProcedure = t.procedure()
 
 const appRouter = t.router({

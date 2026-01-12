@@ -1,8 +1,24 @@
-import { decode as cborDecode, encode as cborEncode } from 'cbor-x'
+import { Decoder, Encoder } from 'cbor-x'
 
 export const CBOR_CONTENT_TYPE = 'application/cbor'
 
 export type ResponseFormat = 'json' | 'cbor'
+
+// Shared CBOR encoder instance.
+// Reusing the encoder lets cbor-x learn and reuse object shapes (useRecords),
+// improving throughput for repeated response shapes (e.g. { ok, data, code }).
+const cborEncoder = new Encoder({
+  useRecords: true,
+  mapsAsObjects: true,
+})
+
+// Shared CBOR decoder instance.
+// Using a shared Decoder allows cbor-x to reuse shape information on decode
+// as well, which can speed up repeated decoding of similar payloads.
+const cborDecoder = new Decoder({
+  useRecords: true,
+  mapsAsObjects: true,
+})
 
 /** Minimal body reader interface for decoding request bodies. */
 export type BodyReader = {
@@ -19,7 +35,8 @@ export async function decodeRequestBody(
 ): Promise<{ body: unknown; format: ResponseFormat }> {
   if (isCborContentType(contentType)) {
     const buf = await reader.arrayBuffer()
-    return { body: cborDecode(new Uint8Array(buf)), format: 'cbor' }
+    // Each request still has its own buffer; only the decoder instance is reused.
+    return { body: cborDecoder.decode(new Uint8Array(buf)), format: 'cbor' }
   }
 
   const body = await reader.json().catch(() => null)
@@ -40,7 +57,10 @@ export function serializeResponse(
   format: ResponseFormat,
 ): Response {
   if (format === 'cbor') {
-    return new Response(cborEncode(body) as Buffer<ArrayBuffer>, {
+    // Each response still gets its own encoded bytes; we only reuse the encoder,
+    // never the output buffer, to avoid corrupting in-flight responses.
+    const encoded = cborEncoder.encode(body) as Buffer<ArrayBuffer>
+    return new Response(encoded, {
       status,
       headers: withContentType(headers, CBOR_CONTENT_TYPE),
     })

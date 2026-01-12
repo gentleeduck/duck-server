@@ -4,7 +4,7 @@ import type { AnyRPCRouter } from './router'
 import { createRouter } from './router'
 
 /** Initialize typed RPC factory helpers bound to a context shape. */
-export function initDuckRPC<const TCtx extends Record<string, any>>() {
+export function initRPC<const TCtx extends Record<string, any>>() {
   return {
     create: () => {
       return {

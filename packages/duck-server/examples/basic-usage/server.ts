@@ -1,17 +1,17 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { initDuckRPC, RPCRes as R } from '../../src/server/core'
+import { initRPC, RPCRes as R } from '../../src/server/core'
 import { rpcServer } from '../../src/server/http'
 
 type BaseContext = { req: Request; requestId: string }
 
-const t = initDuckRPC<BaseContext>().create()
-const publicProcedure = t.procedure()
+const r = initRPC<BaseContext>().create()
+const publicProcedure = r.procedure()
 
-const appRouter = t.router({
+const appRouter = r.router({
   greeting: publicProcedure.input(z.object({ name: z.string() })).query(async ({ input }) => {
-    return R.ok({ greeting: `Hello ${input.name}` }, 'RPC_OK')
+    return R.ok({ greeting: `Hello ${input.name}` }, 'RPC_GREETING_OK')
   }),
 })
 

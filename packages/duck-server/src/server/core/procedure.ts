@@ -1,4 +1,4 @@
-import type { MiddlewareFn } from './middleware'
+import { composeMiddlewares, type MiddlewareFn } from './middleware'
 import { type RPCResType, rpcToErr } from './response'
 import { type AnySchema, type InferOut, parseInput, parseOutput } from './schema'
 
@@ -26,7 +26,7 @@ export type Resolver<TCtx, TInput, TOutput> = (opts: {
 /** Fluent procedure builder with middleware and schema configuration. */
 export type Procedure<TCtx, TInput, TOutput> = {
   /** Attach a middleware that can refine the context type. */
-  use<TNewCtx>(middleWare: MiddlewareFn<TCtx, TNewCtx>): Procedure<TNewCtx, TInput, TOutput>
+  use<TNewCtx extends TCtx>(middleWare: MiddlewareFn<TCtx, TNewCtx>): Procedure<TNewCtx, TInput, TOutput>
   /** Add an input schema that parses incoming raw input. */
   input<TSchema extends AnySchema>(schema: TSchema): Procedure<TCtx, InferOut<TSchema>, TOutput>
   /** Add an output schema that validates resolver output. */
@@ -36,7 +36,7 @@ export type Procedure<TCtx, TInput, TOutput> = {
   /** Create a mutation procedure definition. */
   mutation<TOut extends TOutput>(resolver: Resolver<TCtx, TInput, TOut>): ProcedureDef<TCtx, TInput, TOut, 'mutation'>
   /** Turn of validation for this procedure's input and output. */
-  noValidate(): Procedure<TCtx, TInput, TOutput>
+  validation(value: 'on' | 'off'): Procedure<TCtx, TInput, TOutput>
 }
 
 /** Internal builder state for middleware and schema configuration. */
@@ -78,54 +78,46 @@ export function createProcedure<TCtx, TInput = unknown, TOutput = unknown>(
   const make = <TOut extends TOutput, TType extends ProcedureType>(
     type: TType,
     resolver: Resolver<TCtx, TInput, TOut>,
-  ): ProcedureDef<TCtx, TInput, TOut, TType> => ({
-    _kind: 'procedure',
-    _type: type,
-    _input: undefined as TInput,
-    _output: undefined as TOut,
-    _call: async ({ ctx, rawInput }) => {
-      if (state.inputSchema && state.validation === 'on') {
-        rawInput = await parseInput(state.inputSchema, rawInput)
-      }
+  ): ProcedureDef<TCtx, TInput, TOut, TType> => {
+    // Pre-compose middleware chain once at procedure creation time
+    // This avoids creating the dispatch function and next closures on every request
+    const run = composeMiddlewares<TCtx, TOut>(state.middlewares)
 
-      try {
-        const callResolver = async (nextCtx: TCtx): Promise<RPCResType<TOut>> => {
-          const out = await resolver({ ctx: nextCtx, input: rawInput })
-          if (!state.outputSchema || !out.ok) return out
-          const data = state.validation === 'off' ? await parseOutput(state.outputSchema, out.data) : out.data
-          return { ...out, data }
-        }
-
-        const runMiddlewares = async (index: number, nextCtx: TCtx): Promise<RPCResType<TOut>> => {
-          if (index >= state.middlewares.length) {
-            return callResolver(nextCtx)
+    return {
+      _kind: 'procedure',
+      _type: type,
+      _input: undefined as TInput,
+      _output: undefined as TOut,
+      _call: async ({ ctx, rawInput }) => {
+        try {
+          // Validate input if needed
+          let validatedInput = rawInput
+          if (state.inputSchema && state.validation === 'on') {
+            validatedInput = await parseInput(state.inputSchema, rawInput)
           }
 
-          const mw = state.middlewares[index]!
-          const result = await mw({
-            ctx: nextCtx,
-            next: async (opts) => {
-              const updatedCtx = (opts?.ctx ?? nextCtx) as TCtx
-              const data = await runMiddlewares(index + 1, updatedCtx)
-              return { ok: true, data }
-            },
-          })
+          // Create resolver with validated input - this closure is created per request
+          // but the middleware chain structure itself is pre-composed
+          const resolverWithInput = async (nextCtx: TCtx): Promise<RPCResType<TOut>> => {
+            const out = await resolver({ ctx: nextCtx, input: validatedInput })
+            if (!state.outputSchema || !out.ok) return out
+            const data = state.validation === 'on' ? await parseOutput(state.outputSchema, out.data) : out.data
+            return { ...out, data }
+          }
 
-          if (result.ok) return result.data as RPCResType<TOut>
-          return rpcToErr(result.error)[0]
+          // Run the pre-composed chain with the request-specific resolver
+          return await run(ctx, resolverWithInput)
+        } catch (e: unknown) {
+          return rpcToErr(e)[0]
         }
-
-        return await runMiddlewares(0, ctx)
-      } catch (e: unknown) {
-        return rpcToErr(e)[0]
-      }
-    },
-  })
+      },
+    }
+  }
 
   const query = <TOut extends TOutput>(resolver: Resolver<TCtx, TInput, TOut>) => make('query', resolver)
   const mutation = <TOut extends TOutput>(resolver: Resolver<TCtx, TInput, TOut>) => make('mutation', resolver)
-  const noValidate = () => {
-    return createProcedure<TCtx, TInput, TOutput>({ middlewares: state.middlewares, validation: 'off' })
+  const validation = (value: 'on' | 'off' = 'on') => {
+    return createProcedure<TCtx, TInput, TOutput>({ middlewares: state.middlewares, validation: value })
   }
 
   return {
@@ -134,7 +126,7 @@ export function createProcedure<TCtx, TInput = unknown, TOutput = unknown>(
     output,
     query,
     mutation,
-    noValidate,
+    validation,
   }
 }
 

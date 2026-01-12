@@ -1,7 +1,7 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { createRPCError, initDuckRPC, type MiddlewareFn, RPCRes as R } from '../../src/server/core'
+import { createRPCError, initRPC, type MiddlewareFn, RPCRes as R } from '../../src/server/core'
 import { rpcServer } from '../../src/server/http'
 
 type BaseContext = { req: Request; requestId: string }
@@ -21,7 +21,7 @@ const authMiddleware = (): MiddlewareFn<BaseContext, AuthedContext> => {
   }
 }
 
-const t = initDuckRPC<BaseContext>().create()
+const t = initRPC<BaseContext>().create()
 const publicProcedure = t.procedure()
 const protectedProcedure = publicProcedure.use(authMiddleware())
 
